@@ -23,9 +23,52 @@ struct Tree<T:Ord> {
     // comparator: fn(&T, &T) -> bool,
 }
 
+
 enum Direction {
     Left,
     Right
+}
+
+struct DFSIter<'a, T> {
+    seq: Vec<&'a Node<T>>
+}
+
+impl<'a, T> Iterator for DFSIter<'a, T> {
+    type Item = &'a Node<T>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.seq.is_empty() {
+            None
+        } else {
+            self.seq.pop()
+        }
+    }
+    
+}
+
+impl<'a, T:Ord> DFSIter<'a, T> {
+    fn new(tree: &'a Tree<T>) -> DFSIter<'a, T> {
+        let mut seq = Vec::new();
+        DFSIter::_dfs(&tree.root, &mut seq);
+        Self { seq }
+    }
+    fn _dfs<'b>(root: &'b Link<T>, seq: &mut Vec<&'b Node<T>>) {
+        if root.is_none() {return;}
+        let node = root.as_deref().unwrap();
+        DFSIter::_dfs(&node.right, seq);
+        seq.push(node);
+        DFSIter::_dfs(&node.left, seq);
+    }
+}
+
+impl<T: Ord+Copy> Tree<T> {
+    fn construct(array: &[T]) -> Self {
+        let mut res = Self::new();
+        for i in array.iter() {
+            res.add(*i);
+        }
+        res
+    }
 }
 
 impl<T:Ord> Tree<T> {
@@ -35,25 +78,35 @@ impl<T:Ord> Tree<T> {
             root: None,
         }
     }
-
-    fn dfs(&self, rule: fn(&T)) {
-        Tree::_dfs(&self.root, rule);
+    fn iter_dfs(&self) -> DFSIter<T> {
+        DFSIter::new(self)
+    }
+    fn inorder_big<'a>(root: &'a mut Node<T>) -> &'a mut Link<T> {
+        if root.right.is_none() { return & mut root.right;}
+        let mut root = &mut root.right;
+        while root.as_ref().unwrap().left.is_some() {
+            root = &mut root.as_mut().unwrap().left;
+        }
+        root
+    }
+    fn inorder_small<'a>(root: &'a mut Node<T>) -> &'a mut Link<T> {
+        if root.left.is_none() { return & mut root.left;}
+        let mut root = &mut root.left;
+        while root.as_ref().unwrap().right.is_some() {
+            root = &mut root.as_mut().unwrap().right;
+        }
+        root
     }
 
-    fn _dfs(root: &Link<T>, rule: fn(&T)) {
-        if root.is_none() {return;}
-        let node = root.as_ref().unwrap();
-        rule(&node.value);
-        Tree::_dfs(&node.left, rule);
-        Tree::_dfs(&node.right, rule);
+    fn delete(&mut self, value: T) {
     }
 
-    fn search(&self, value: T) -> Option<&Node<T>> {
+    fn search(&self, value: &T) -> Option<&Node<T>> {
         if self.root.is_none() {return None;}
         let mut root = self.root.as_ref().unwrap();
-        if root.value == value { return Some(&*root);}
+        if root.value == *value { return Some(&*root);}
         let mut next = {
-            if value < root.value {
+            if *value < root.value {
                 &root.left
             } else {
                 &root.right
@@ -61,9 +114,9 @@ impl<T:Ord> Tree<T> {
         };
         while next.is_some() {
             root = next.as_ref().unwrap();
-            if root.value == value { return Some(&*root);}
+            if root.value == *value { return Some(&*root);}
             next = {
-                if value < root.value {
+                if *value < root.value {
                     &root.left
                 } else {
                     &root.right
@@ -97,6 +150,7 @@ impl<T:Ord> Tree<T> {
             };
         }
         *next = Some(Box::new(Node::new(value)));
+        self.len += 1;
     }
     fn is_leaf(node: &Node<T>) -> bool {
         match (&node.left, &node.right) {
@@ -114,9 +168,44 @@ impl<T:Ord> Tree<T> {
 
 #[cfg(test)]
 mod tests {
-    use std::isize;
-
     use super::*;
+
+    #[test]
+    fn test_add_iter() {
+        let mut arr = [2,33,44,2,4,1,8,57,46,25,12,445,226,90,40,19];
+        let mut ans:Vec<isize> = Vec::new();
+
+        let tt = Tree::construct(&arr);
+        let iter = tt.iter_dfs();
+
+        for i in iter {
+            ans.push(i.value);
+            print!("{} ", i.value);
+        }
+        println!("");
+
+        arr.sort();
+        assert_eq!(arr.to_vec(), ans);
+
+        // let ans = "1 3 5 5 8 9 12 14 17 22";
+        // assert_eq!(res.as_str(), ans);
+    }
+    #[test]
+    fn test_search() {
+        let arr = [2,33,44,2,4,1,8,57,46,25,12,445,226,90,40,19];
+        let bst = Tree::construct(&arr);
+        for i in arr.iter() {
+            let temp = bst.search(i).unwrap();
+            assert_eq!(temp.value, *i);
+        }
+        assert!(bst.search(&3333).is_none());
+        assert!(bst.search(&10).is_none());
+        assert!(bst.search(&45).is_none());
+        assert!(bst.search(&11).is_none());
+        assert!(bst.search(&58).is_none());
+        assert!(bst.search(&39).is_none());
+    }
+
     #[test]
     fn test_binary_tree() {
         let mut tt:Tree<isize> = Tree::new();
@@ -130,16 +219,28 @@ mod tests {
         tt.add(5);
         tt.add(3);
         tt.add(17);
-        tt.dfs(|x| {
-            println!("{} ", x);
-        });
-        if let Some(x) = tt.search(117) {
+        // tt.dfs(|x| {
+            // println!("{} ", x);
+        // });
+        if let Some(x) = tt.search(&117) {
             println!("Found {}", x.value);
         }
         let value = 3;
-        match tt.search(value) {
+        match tt.search(&value) {
             None => println!("Not found {}", value),
             Some(x) => println!("Found {}", x.value)
+        }
+        match Tree::inorder_big(tt.root.as_deref_mut().unwrap()) {
+            Some(x) => {
+                println!("{}", x.value);
+            },
+            None => println!("Not found")
+        }
+        match Tree::inorder_small(tt.root.as_deref_mut().unwrap()) {
+            Some(x) => {
+                println!("{}", x.value);
+            },
+            None => println!("Not found")
         }
     }
 }
