@@ -81,19 +81,19 @@ impl<T:Ord> Tree<T> {
     fn iter_dfs(&self) -> DFSIter<T> {
         DFSIter::new(self)
     }
-    fn inorder_big<'a>(root: &'a mut Node<T>) -> &'a mut Link<T> {
-        if root.right.is_none() { return & mut root.right;}
-        let mut root = &mut root.right;
+    fn inorder_big<'a>(root: &'a Node<T>) -> &'a Link<T> {
+        if root.right.is_none() { return &root.right;}
+        let mut root = &root.right;
         while root.as_ref().unwrap().left.is_some() {
-            root = &mut root.as_mut().unwrap().left;
+            root = &root.as_ref().unwrap().left;
         }
         root
     }
-    fn inorder_small<'a>(root: &'a mut Node<T>) -> &'a mut Link<T> {
-        if root.left.is_none() { return & mut root.left;}
-        let mut root = &mut root.left;
+    fn inorder_small<'a>(root: &'a Node<T>) -> &'a Link<T> {
+        if root.left.is_none() { return & root.left;}
+        let mut root = &root.left;
         while root.as_ref().unwrap().right.is_some() {
-            root = &mut root.as_mut().unwrap().right;
+            root = &root.as_ref().unwrap().right;
         }
         root
     }
@@ -101,6 +101,30 @@ impl<T:Ord> Tree<T> {
     fn delete(&mut self, value: T) {
     }
 
+    fn search_mut(&mut self, value: &T) -> Option<&mut Node<T>> {
+        if self.root.is_none() {return None;}
+        let mut root = self.root.as_mut().unwrap();
+        if root.value == *value { return Some(&mut *root);}
+        let mut next = {
+            if *value < root.value {
+                &mut root.left
+            } else {
+                &mut root.right
+            }
+        };
+        while next.is_some() {
+            root = next.as_mut().unwrap();
+            if root.value == *value { return Some(&mut *root);}
+            next = {
+                if *value < root.value {
+                    &mut root.left
+                } else {
+                    &mut root.right
+                }
+            };
+        }
+        None
+    }
     fn search(&self, value: &T) -> Option<&Node<T>> {
         if self.root.is_none() {return None;}
         let mut root = self.root.as_ref().unwrap();
@@ -124,7 +148,6 @@ impl<T:Ord> Tree<T> {
             };
         }
         None
-
     }
     fn add(&mut self, value: T) {
         if let None = self.root {
@@ -207,6 +230,38 @@ mod tests {
     }
 
     #[test]
+    fn test_inorder() {
+        let arr = [46,33,44,2,4,1,8,57,2,25,12,445,226,90,40,19];
+        let bst = Tree::construct(&arr);
+        let mut iter = bst.iter_dfs();
+        let mut pre = iter.next().unwrap();
+        for node in iter {
+            let mut f = false;
+            let mut s = false;
+            match Tree::inorder_big(pre) {
+                Some(x) => {
+                    if x.value == node.value {
+                        println!("{} inorder big is {}", pre.value, node.value);
+                        f = true;
+                    }
+                },
+                None => {}
+            }
+            match Tree::inorder_small(node) {
+                Some(x) => {
+                    if x.value == pre.value {
+                        s = true;
+                        println!("{} inorder small is {}", node.value, pre.value);
+                    }
+                },
+                None => {}
+            }
+            pre = node;
+            assert!(f != s);
+        }
+    }
+
+    // #[test]
     fn test_binary_tree() {
         let mut tt:Tree<isize> = Tree::new();
         tt.add(14);
