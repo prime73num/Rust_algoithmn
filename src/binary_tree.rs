@@ -1,3 +1,5 @@
+use std::mem;
+
 
 struct Node<T> {
    value: T,
@@ -11,22 +13,13 @@ impl<T> Node<T> {
            value, left: None, right: None
        } 
     }
-
 }
 
-
 type Link<T> = Option<Box<Node<T>>>;
-
 struct Tree<T:Ord> {
     len: usize,
     root: Link<T>,
     // comparator: fn(&T, &T) -> bool,
-}
-
-
-enum Direction {
-    Left,
-    Right
 }
 
 struct DFSIter<'a, T> {
@@ -98,24 +91,54 @@ impl<T:Ord> Tree<T> {
         root
     }
 
-    fn delete(&mut self, value: T) {
+    fn inorder_big_mut<'a>(root: &'a mut Node<T>) -> &'a mut Link<T> {
+        if root.right.is_none() { return &mut root.right;}
+        let mut root = &mut root.right;
+        while root.as_ref().unwrap().left.is_some() {
+            root = &mut root.as_mut().unwrap().left;
+        }
+        root
+    }
+    fn inorder_small_mut<'a>(root: &'a mut Node<T>) -> &'a mut Link<T> {
+        if root.left.is_none() { return &mut root.left;}
+        let mut root = &mut root.left;
+        while root.as_ref().unwrap().right.is_some() {
+            root = &mut root.as_mut().unwrap().right;
+        }
+        root
     }
 
-    fn search_mut(&mut self, value: &T) -> Option<&mut Node<T>> {
-        if self.root.is_none() {return None;}
-        let mut root = self.root.as_mut().unwrap();
-        if root.value == *value { return Some(&mut *root);}
-        let mut next = {
-            if *value < root.value {
-                &mut root.left
-            } else {
-                &mut root.right
+    #[allow(unused_must_use)]
+    fn delete(&mut self, value: T) {
+        let position = self.search_mut(&value);
+        if position.is_none() {return;}
+        if Tree::is_leaf(position.as_deref().unwrap()) {
+            *position = None;
+        } else {
+            let root = Tree::inorder_small_mut(position.as_deref_mut().unwrap());
+            if root.is_some() {
+                let leftson = mem::replace(&mut root.as_deref_mut().unwrap().left, None);
+                let parent = mem::replace(root, leftson);
+                mem::replace(&mut position.as_deref_mut().unwrap().value, parent.unwrap().value);
+                return;
             }
-        };
-        while next.is_some() {
-            root = next.as_mut().unwrap();
-            if root.value == *value { return Some(&mut *root);}
-            next = {
+            let root = Tree::inorder_big_mut(position.as_deref_mut().unwrap());
+            if root.is_some() {
+                let rightson = mem::replace(&mut root.as_deref_mut().unwrap().right, None);
+                let parent = mem::replace(root, rightson);
+                mem::replace(&mut position.as_deref_mut().unwrap().value, parent.unwrap().value);
+            }
+        }
+    }
+
+    fn search_mut(&mut self, value: &T) -> &mut Link<T> {
+        let mut this = &mut self.root;
+        loop {
+            if this.is_none() || this.as_deref().unwrap().value==*value {
+                return this;
+            }
+            let root = this.as_deref_mut().unwrap();
+            this = {
                 if *value < root.value {
                     &mut root.left
                 } else {
@@ -123,23 +146,15 @@ impl<T:Ord> Tree<T> {
                 }
             };
         }
-        None
     }
-    fn search(&self, value: &T) -> Option<&Node<T>> {
-        if self.root.is_none() {return None;}
-        let mut root = self.root.as_ref().unwrap();
-        if root.value == *value { return Some(&*root);}
-        let mut next = {
-            if *value < root.value {
-                &root.left
-            } else {
-                &root.right
+    fn search(&self, value: &T) -> &Link<T> {
+        let mut this = &self.root;
+        loop {
+            if this.is_none() || this.as_deref().unwrap().value==*value {
+                return this;
             }
-        };
-        while next.is_some() {
-            root = next.as_ref().unwrap();
-            if root.value == *value { return Some(&*root);}
-            next = {
+            let root = this.as_deref().unwrap();
+            this = {
                 if *value < root.value {
                     &root.left
                 } else {
@@ -147,24 +162,16 @@ impl<T:Ord> Tree<T> {
                 }
             };
         }
-        None
     }
     fn add(&mut self, value: T) {
-        if let None = self.root {
-            self.root = Some(Box::new(Node::new(value)));
-            return;
-        }
-        let mut root = self.root.as_mut().unwrap();
-        let mut next = {
-            if value < root.value {
-                &mut root.left
-            } else {
-                &mut root.right
+        let mut this = &mut self.root;
+        loop {
+            if this.is_none() {
+                *this = Some(Box::new(Node::new(value)));
+                break;
             }
-        };
-        while next.is_some() {
-            root = next.as_mut().unwrap();
-            next = {
+            let root = this.as_deref_mut().unwrap();
+            this = {
                 if value < root.value {
                     &mut root.left
                 } else {
@@ -172,7 +179,6 @@ impl<T:Ord> Tree<T> {
                 }
             };
         }
-        *next = Some(Box::new(Node::new(value)));
         self.len += 1;
     }
     fn is_leaf(node: &Node<T>) -> bool {
@@ -195,7 +201,7 @@ mod tests {
 
     #[test]
     fn test_add_iter() {
-        let mut arr = [2,33,44,2,4,1,8,57,46,25,12,445,226,90,40,19];
+        let mut arr = [2,33,44,2,4,1,8,57,46,25,12,554,226,90,40,19];
         let mut ans:Vec<isize> = Vec::new();
 
         let tt = Tree::construct(&arr);
@@ -203,9 +209,9 @@ mod tests {
 
         for i in iter {
             ans.push(i.value);
-            print!("{} ", i.value);
+            // print!("{} ", i.value);
         }
-        println!("");
+        // println!("");
 
         arr.sort();
         assert_eq!(arr.to_vec(), ans);
@@ -218,7 +224,7 @@ mod tests {
         let arr = [2,33,44,2,4,1,8,57,46,25,12,445,226,90,40,19];
         let bst = Tree::construct(&arr);
         for i in arr.iter() {
-            let temp = bst.search(i).unwrap();
+            let temp = bst.search(i).as_deref().unwrap();
             assert_eq!(temp.value, *i);
         }
         assert!(bst.search(&3333).is_none());
@@ -241,7 +247,7 @@ mod tests {
             match Tree::inorder_big(pre) {
                 Some(x) => {
                     if x.value == node.value {
-                        println!("{} inorder big is {}", pre.value, node.value);
+                        // println!("{} inorder big is {}", pre.value, node.value);
                         f = true;
                     }
                 },
@@ -251,13 +257,30 @@ mod tests {
                 Some(x) => {
                     if x.value == pre.value {
                         s = true;
-                        println!("{} inorder small is {}", node.value, pre.value);
+                        // println!("{} inorder small is {}", node.value, pre.value);
                     }
                 },
                 None => {}
             }
             pre = node;
             assert!(f != s);
+        }
+    }
+
+    #[test]
+    fn test_delete() {
+        let arr = [46,33,44,2,4,1,8,57,22,25,12,445,226,90,40,19];
+        let mut bst = Tree::construct(&arr);
+        for i in bst.iter_dfs() {
+            print!("{} ", i.value);
+        }
+        println!("");
+
+        for i in arr.iter() {
+            // Require the binary tree does not have same value.
+            assert!(bst.search(i).is_some());
+            bst.delete(*i);
+            assert!(bst.search(i).is_none());
         }
     }
 
