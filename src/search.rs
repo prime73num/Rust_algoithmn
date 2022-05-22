@@ -1,7 +1,6 @@
-use std::usize;
-
+use std::fmt::Display;
 use crate::sort;
-// use crate::heap;
+use crate::heap::Heap;
 
 
 fn quick_select<T: Ord+Copy>(mut arr: &mut [T], mut index: usize) -> T {
@@ -34,6 +33,19 @@ fn binary_search<T: Ord+Copy>(arr: &[T], valew: T) -> Option<usize> {
             end = mid;
         }
     }
+}
+
+fn k_smallest<T:Ord+Copy+Default+Display>(arr: &[T], k: usize) -> Vec<T> {
+    let karr = arr[..k].to_vec();
+    let mut max_heap = Heap::construct(|x,y| {x>y}, karr);
+    let rest = &arr[k..];
+    for value in rest.iter() {
+        if *value < *max_heap.front() {
+            let p = max_heap.pop();
+            max_heap.add(*value);
+        }
+    }
+    max_heap.to_vec()
 }
 
 #[cfg(test)]
@@ -75,5 +87,17 @@ mod tests {
         assert!(temp.is_none());
         let temp = binary_search(&arr, 21);
         assert!(temp.is_none());
+    }
+
+    #[test]
+    fn test_k_smallest() {
+        let arr = [46,33,44,2,4,1,8,57,22,25,12,445,226,90,40,19];
+        let mut ans = [46,33,44,2,4,1,8,57,22,25,12,445,226,90,40,19];
+        ans.sort();
+        for i in 1..arr.len() {
+            let mut ksmall = k_smallest(&arr, i);
+            ksmall.sort();
+            assert_eq!(ksmall, ans[..i].to_vec());
+        }
     }
 }

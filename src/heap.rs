@@ -1,5 +1,5 @@
 
-struct Heap<T> {
+pub struct Heap<T> {
     len: usize,
     item: Vec<T>,
     comparator: fn(&T, &T) -> bool
@@ -19,11 +19,14 @@ impl<T:Default> Heap<T> {
         };
         temp.item.push(T::default());
         temp.item.swap(0, temp.len);
-        let end = (temp.len)/2;
+        let end = (temp.len)/2+1;
         for i in {1..end}.rev() {
             temp.down(i);
         }
         temp
+    }
+    pub fn front(&self) -> &T {
+        &self.item[1]
     }
     pub fn add(&mut self, valte: T) {
         self.item.push(valte);
@@ -41,6 +44,10 @@ impl<T:Default> Heap<T> {
     }
     pub fn is_empty(&self) -> bool {
         return self.len==0;
+    }
+    pub fn to_vec(mut self) -> Vec<T> {
+        self.item.remove(0);
+        self.item
     }
     fn has(&self, idx: usize) -> bool {
         return idx<self.item.len();
@@ -93,8 +100,6 @@ impl<T:Default> Heap<T> {
 
 #[cfg(test)]
 mod tests {
-    use std::isize;
-
     use super::*;
     #[test]
     fn test_output() {
@@ -110,7 +115,7 @@ mod tests {
         while let Some(v) = heap.pop() {
             output.push(v);
         }
-        println!("{:?}", output);
+        // println!("{:?}", output);
 
         let mut arr = [33,4,6,2,8,9,13,55,22,220,30,24,99,25,13,21,9];
         let input = arr.to_vec();
@@ -119,9 +124,18 @@ mod tests {
         while let Some(v) = heap.pop() {
             output.push(v);
         }
-        println!("{:?}", output);
+        // println!("{:?}", output);
         arr.sort();
         assert_eq!(arr.to_vec(), output);
 
+    }
+
+    #[test]
+    fn test_construct() {
+        let arr = [46,33,44,2,4,1,8,57,22,25,12,445,226];
+        let max_heap = Heap::construct(|x,y| {x>y}, arr.to_vec());
+        let out = max_heap.to_vec();
+        let ans = [445, 44, 226, 25, 33, 46, 57, 22, 4, 12, 1, 8, 2].to_vec();
+        assert_eq!(out, ans);
     }
 }
