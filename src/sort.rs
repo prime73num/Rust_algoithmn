@@ -1,5 +1,6 @@
 use std::cmp::Ordering;
-fn part<T: Ord>(arr: &mut [T], idx: usize) -> usize {
+
+pub fn part<T: Ord>(arr: &mut [T], idx: usize) -> usize {
     let mut i:isize = -1;
     let mut j = 0;
     arr.swap(idx, arr.len()-1);
@@ -80,45 +81,49 @@ fn merge_sort<T:Ord+Copy>(arr:&mut [T]) {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn test_part() {
+        let mut arr = [46,33,44,2,4,1,8,57,22,25,12,445,226,90,40,19];
+        let mid = part(&mut arr, 6);
+        for i in &arr[..mid] {
+            assert!(*i<arr[mid]);
+        }
+        for i in &arr[mid..] {
+            assert!(*i>=arr[mid]);
+        }
+    }
+
     #[test]
     fn test_quick_sort() {
-        let mut a = [1,5,3,33,7,4,7,88];
-        let ans = [1,3,4,33,7,88,7,5];
-        let idx = 5;
-        let part = part(&mut a, idx);
-        // println!("Part at {} : {:?}", part, a);
-        assert_eq!(a, ans);
-        quick_sort(&mut a);
-        // println!("Sorted: {:?}", a);
-        let ans = [1,3,4,5,7,7,33,88];
-        assert_eq!(a, ans);
-        let a = [1,2,2,2,2];
+        let mut arr = [46,33,44,2,4,1,8,57,22,25,12,445,226,90,40,19];
+        let mut ans = [46,33,44,2,4,1,8,57,22,25,12,445,226,90,40,19];
+        ans.sort();
+        quick_sort(&mut arr);
+        assert_eq!(arr, ans);
     }
     #[test]
     fn test_bubble() {
-        let mut a = [8,5,3,22,7,4,10,88];
-        // println!("{:?}", a);
-        let ans = [3,4,5,7,8,10,22,88];
-        bubble_sort(&mut a);
-        // println!("{:?}", a);
-        assert_eq!(a, ans);
+        let mut arr = [46,33,44,2,4,1,8,57,22,25,12,445,226,90,40,19];
+        let mut ans = [46,33,44,2,4,1,8,57,22,25,12,445,226,90,40,19];
+        ans.sort();
+        bubble_sort(&mut arr);
+        assert_eq!(arr, ans);
     }
     #[test]
     fn test_insert() {
-        let mut a = [8,5,3,22,7,4,10,88];
-        // println!("{:?}", a);
-        let ans = [3,4,5,7,8,10,22,88];
-        insertion_sort(&mut a);
-        // println!("{:?}", a);
-        assert_eq!(a, ans);
+        let mut arr = [46,33,44,2,4,1,8,57,22,25,12,445,226,90,40,19];
+        let mut ans = [46,33,44,2,4,1,8,57,22,25,12,445,226,90,40,19];
+        ans.sort();
+        insertion_sort(&mut arr);
+        assert_eq!(arr, ans);
     }
     #[test]
     fn test_merge() {
-        let mut a = [8,5,3,22,7,4,10,88];
-        // println!("{:?}", a);
-        let ans = [3,4,5,7,8,10,22,88];
-        merge_sort(&mut a);
-        // println!("{:?}", a);
-        assert_eq!(a, ans);
+        let mut arr = [46,33,44,2,4,1,8,57,22,25,12,445,226,90,40,19];
+        let mut ans = [46,33,44,2,4,1,8,57,22,25,12,445,226,90,40,19];
+        ans.sort();
+        merge_sort(&mut arr);
+        assert_eq!(arr, ans);
     }
 }

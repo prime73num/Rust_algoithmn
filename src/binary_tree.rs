@@ -283,42 +283,4 @@ mod tests {
             assert!(bst.search(i).is_none());
         }
     }
-
-    // #[test]
-    fn test_binary_tree() {
-        let mut tt:Tree<isize> = Tree::new();
-        tt.add(14);
-        tt.add(12);
-        tt.add(22);
-        tt.add(9);
-        tt.add(5);
-        tt.add(1);
-        tt.add(8);
-        tt.add(5);
-        tt.add(3);
-        tt.add(17);
-        // tt.dfs(|x| {
-            // println!("{} ", x);
-        // });
-        if let Some(x) = tt.search(&117) {
-            println!("Found {}", x.value);
-        }
-        let value = 3;
-        match tt.search(&value) {
-            None => println!("Not found {}", value),
-            Some(x) => println!("Found {}", x.value)
-        }
-        match Tree::inorder_big(tt.root.as_deref_mut().unwrap()) {
-            Some(x) => {
-                println!("{}", x.value);
-            },
-            None => println!("Not found")
-        }
-        match Tree::inorder_small(tt.root.as_deref_mut().unwrap()) {
-            Some(x) => {
-                println!("{}", x.value);
-            },
-            None => println!("Not found")
-        }
-    }
 }

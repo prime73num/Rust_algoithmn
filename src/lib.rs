@@ -3,6 +3,4 @@
 mod sort;
 mod heap;
 mod binary_tree;
-
-fn test() {
-}
+mod search;
