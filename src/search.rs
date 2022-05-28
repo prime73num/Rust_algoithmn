@@ -1,6 +1,6 @@
 use std::fmt::Display;
 use crate::sort;
-use crate::heap::Heap;
+use crate::data_structures::heap::Heap;
 
 
 fn quick_select<T: Ord+Copy>(mut arr: &mut [T], mut index: usize) -> T {
